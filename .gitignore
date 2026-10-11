@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Telusearch artifacts and data directories
+data/
+artifacts/
+*.faiss
+*.index
+*.parquet
+*.npy
+*.pt
+*.bin
+
