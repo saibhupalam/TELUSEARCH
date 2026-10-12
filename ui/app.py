@@ -22,6 +22,8 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from search.semantic import SemanticSearcher
+from search.bm25 import BM25Searcher
+from search.hybrid import HybridSearcher
 
 # Page configuration
 st.set_page_config(
@@ -111,26 +113,50 @@ st.markdown("""
 
 
 @st.cache_resource(show_spinner="నమూనాలు మరియు డేటాను లోడ్ చేస్తోంది (Loading models & index)...")
-def load_searcher():
-    """Cached loader for FAISS index and model."""
+def load_all_searchers():
+    """Cached loader for Semantic, BM25, and Hybrid searchers."""
     index_path = os.path.join(PROJECT_ROOT, "artifacts", "faiss_index.bin")
     metadata_path = os.path.join(PROJECT_ROOT, "artifacts", "metadata.parquet")
 
     if not os.path.exists(index_path) or not os.path.exists(metadata_path):
-        return None
+        return None, None, None
 
-    searcher = SemanticSearcher(
+    # Semantic searcher
+    semantic_searcher = SemanticSearcher(
         index_path=index_path,
         metadata_path=metadata_path
     )
-    searcher.load()
-    return searcher
+    semantic_searcher.load()
+
+    # BM25 searcher
+    bm25_searcher = BM25Searcher(metadata_path=metadata_path)
+    bm25_searcher.load()
+
+    # Hybrid searcher
+    hybrid_searcher = HybridSearcher(
+        semantic_searcher=semantic_searcher,
+        bm25_searcher=bm25_searcher,
+        alpha=0.65
+    )
+
+    return semantic_searcher, bm25_searcher, hybrid_searcher
 
 
 def main():
     # Sidebar
     st.sidebar.title("⚙️ సెర్చ్ సెట్టింగులు")
     st.sidebar.markdown("---")
+
+    # Search Mode Selection
+    search_mode = st.sidebar.radio(
+        "🔍 శోధన పద్ధతి (Search Mode):",
+        [
+            "🧠 సెమాంటిక్ శోధన (Semantic - FAISS + E5)",
+            "⚡ హైబ్రిడ్ శోధన (Hybrid - Dense + BM25)",
+            "🔤 కీవర్డ్ శోధన (Keyword - BM25)"
+        ],
+        index=0
+    )
 
     top_k = st.sidebar.slider(
         "ఫలితాల సంఖ్య (Number of Results):",
@@ -142,11 +168,12 @@ def main():
 
     st.sidebar.markdown("### 💡 నమూనా ప్రశ్నలు (Sample Queries)")
     sample_queries = [
-        "రోడ్డు ప్రమాదం మృతులు",
-        "రైతు సమస్యలు పంట నష్టం",
-        "సినీ నటులు మరియు దర్శకులు",
-        "పోలీసులు అరెస్ట్",
-        "కరోనా వైరస్ ప్రభావం"
+        "ఘోర రోడ్డు ప్రమాదం మృతులు",
+        "కరోనా వైరస్ వ్యాక్సినేషన్ డోస్",
+        "టాలీవుడ్ హీరో నాగశౌర్య కొత్త సినిమా",
+        "సానియా మీర్జా టెన్నిస్ యుఎస్ ఓపెన్",
+        "వ్యవసాయ విద్యార్థులకు ప్రభుత్వ ఉద్యోగాలు జీఓ 16",
+        "ముఖ్యమంత్రి వైఎస్ జగన్ విశాఖపట్నం పర్యటన"
     ]
 
     selected_sample = None
@@ -159,6 +186,7 @@ def main():
     st.sidebar.caption("• మోడల్: `intfloat/multilingual-e5-base`")
     st.sidebar.caption("• వెక్టర్ కొలత: `768 Dimensions`")
     st.sidebar.caption("• ఇండెక్స్ మెట్రిక్: `FAISS IndexFlatIP (Cosine)`")
+    st.sidebar.caption("• లేక్సికల్ ఇంజిన్: `BM25 Okapi`")
     st.sidebar.caption("• ఇండెక్స్ చేయబడిన వార్తలు: `1,000 Articles`")
 
     # Main UI Header
@@ -168,15 +196,26 @@ def main():
         unsafe_allow_html=True
     )
 
-    # Load Searcher
-    searcher = load_searcher()
-    if searcher is None:
+    # Load Searchers
+    semantic_searcher, bm25_searcher, hybrid_searcher = load_all_searchers()
+    if semantic_searcher is None:
         st.error(
             "⚠️ FAISS ఇండెక్స్ లేదా మెటాడేటా ఫైళ్లు కనిపించలేదు! "
             "దయచేసి ముందుగా `python indexing/build_index.py` రన్ చేసి ఇండెక్స్ నిర్మించండి."
         )
         st.info("Artifacts path: `artifacts/faiss_index.bin`, `artifacts/metadata.parquet`")
         return
+
+    # Select active searcher
+    if "సెమాంటిక్" in search_mode:
+        active_searcher = semantic_searcher
+        mode_label = "Semantic (FAISS + E5)"
+    elif "హైబ్రిడ్" in search_mode:
+        active_searcher = hybrid_searcher
+        mode_label = "Hybrid (Dense + BM25, Alpha=0.65)"
+    else:
+        active_searcher = bm25_searcher
+        mode_label = "Keyword (BM25 Okapi)"
 
     # Search Bar
     query_input = st.text_input(
@@ -197,8 +236,8 @@ def main():
             st.warning("దయచేసి శోధించడానికి ఒక ప్రశ్నను నమోదు చేయండి (Please enter a query).")
             return
 
-        with st.spinner("వార్తలను శోధిస్తోంది (Searching relevant articles)..."):
-            results = searcher.search(active_query, top_k=top_k)
+        with st.spinner(f"[{mode_label}] వార్తలను శోధిస్తోంది..."):
+            results = active_searcher.search(active_query, top_k=top_k)
 
         if not results:
             st.info("సరిపోలిన వార్తలు ఏవీ కనుగొనబడలేదు (No matching articles found).")
@@ -206,18 +245,22 @@ def main():
 
         retrieval_ms = results[0]["retrieval_time_ms"]
         st.markdown(
-            f'<div class="stat-pill">⚡ <b>{len(results)}</b> ఫలితాలు దొరికాయి (సమయం: <b>{retrieval_ms:.1f} ms</b>)</div>',
+            f'<div class="stat-pill">⚡ <b>{len(results)}</b> ఫలితాలు దొరికాయి | ఇంజిన్: <b>{mode_label}</b> | సమయం: <b>{retrieval_ms:.1f} ms</b></div>',
             unsafe_allow_html=True
         )
 
         # Render Results
         for r in results:
-            score_pct = r["score"] * 100
+            if r["score"] > 1.0:
+                score_label = f"BM25 స్కోరు: {r['score']:.2f}"
+            else:
+                score_label = f"సామ్యత స్కోరు: {r['score'] * 100:.1f}% ({r['score']:.4f})"
+
             st.markdown(f"""
             <div class="result-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
                     <div>
-                        <span class="score-badge">సామ్యత స్కోరు (Score): {score_pct:.1f}% ({r['score']:.4f})</span>
+                        <span class="score-badge">{score_label}</span>
                         <span class="id-badge">ID: {r['doc_id']}</span>
                     </div>
                     <span style="color: #6b7280; font-size: 0.85rem;">వరుస సంఖ్య: #{r['rank']}</span>
