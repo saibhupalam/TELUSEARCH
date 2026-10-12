@@ -172,7 +172,7 @@ def print_before_after_samples(df_sample: pd.DataFrame, num_samples: int = 2):
 def main():
     parser = argparse.ArgumentParser(description="TELUSEARCH Preprocessing Pipeline")
     parser.add_argument("--split", type=str, default="validation", help="Dataset split to process")
-    parser.add_argument("--sample", type=int, default=None, help="Sample size for testing (e.g., 100)")
+    parser.add_argument("--sample", "--sample-size", dest="sample", type=int, default=None, help="Sample size for testing (e.g., 100)")
     parser.add_argument("--output-dir", type=str, default="data/processed", help="Output directory")
     args = parser.parse_args()
 
