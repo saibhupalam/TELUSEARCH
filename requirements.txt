@@ -1,0 +1,25 @@
+# TELUSEARCH: Python Dependencies
+# Environment: Python 3.10+ / 3.11 (Tested on Windows 11)
+
+# Core NLP, Transformers & Embeddings
+sentence-transformers>=3.0.0
+transformers>=4.40.0
+torch>=2.2.0
+
+# Vector Search Index
+faiss-cpu>=1.8.0
+
+# Lexical Search (BM25)
+rank-bm25>=0.2.2
+
+# Dataset & Data Processing
+datasets>=3.0.0
+pandas>=2.0.0
+numpy>=1.24.0
+pyarrow>=15.0.0
+
+# Web Application Interface
+streamlit>=1.35.0
+
+# Utilities
+tqdm>=4.66.0

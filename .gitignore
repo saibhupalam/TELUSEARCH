@@ -218,6 +218,8 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Telusearch artifacts and data directories
+.venv/
+venv/
 data/
 artifacts/
 *.faiss
