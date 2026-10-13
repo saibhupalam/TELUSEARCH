@@ -16,7 +16,7 @@ Lexical engines frequently fail to retrieve articles discussing `"రోడ్�
 
 ---
 
-## 🏛️ 2. System Architecture
+##  2. System Architecture
 
 The following Mermaid diagram illustrates the end-to-end data preparation, indexing, retrieval, and presentation pipelines:
 
@@ -57,7 +57,7 @@ flowchart TD
 
 ---
 
-## 🛠️ 3. Technology Stack
+##  3. Technology Stack
 
 | Component | Technology | Rationale & Purpose |
 |---|---|---|
@@ -71,7 +71,7 @@ flowchart TD
 
 ---
 
-## 📂 4. Project Directory Structure
+##  4. Project Directory Structure
 
 ```
 telusearch/
@@ -105,7 +105,7 @@ telusearch/
 
 ---
 
-## 🚀 5. Installation and Setup Instructions
+##  5. Installation and Setup Instructions
 
 ### Prerequisites
 - Windows 10/11 (or Linux/macOS)
@@ -129,7 +129,7 @@ pip install -r requirements.txt
 
 ---
 
-## ⚡ 6. Execution Pipeline (Reproducing from Scratch)
+##  6. Execution Pipeline (Reproducing from Scratch)
 
 You can run each phase sequentially or inspect the existing precomputed artifacts:
 
@@ -171,7 +171,7 @@ python evaluation/evaluate.py --top-k 5
 
 ---
 
-## 📊 7. Retrieval Evaluation Results
+##  7. Retrieval Evaluation Results
 
 Macro-averaged evaluation across 8 Telugu news domain test queries ($k=5$):
 
@@ -190,7 +190,7 @@ Macro-averaged evaluation across 8 Telugu news domain test queries ($k=5$):
 
 
 
-## ⚠️ 9. Limitations & Future Scope
+##  9. Limitations & Future Scope
 
 ### Limitations:
 1. **Transformer Token Length**: Documents are truncated beyond the 512-token context limit of multilingual E5.
