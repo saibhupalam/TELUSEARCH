@@ -5,7 +5,7 @@
 
 ---
 
-## 📌 1. Project Overview & Problem Statement
+##  1. Project Overview & Problem Statement
 
 Traditional keyword-based information retrieval engines (e.g., standard SQL `LIKE`, TF-IDF, or basic BM25) rely heavily on exact string matches. However, **Telugu** is a morphologically rich, agglutinative Dravidian language with complex sandhi, inflections, and vibhakti case suffixes (e.g., `ప్రమాదం`, `ప్రమాదంలో`, `ప్రమాదాలు`). When a user enters a query such as:
 > *"ఘోర రోడ్డు ప్రమాదం మృతులు"* (Fatal road accident deaths)
@@ -188,35 +188,7 @@ Macro-averaged evaluation across 8 Telugu news domain test queries ($k=5$):
 
 ---
 
-## 🎓 8. College Project Viva Voce Cheat-Sheet
 
-Here are typical questions examiners ask during a college project defense and how to answer them:
-
-### Q1: Why did you use `intfloat/multilingual-e5-base` instead of BERT or word2vec?
-> **Answer**: `word2vec` produces static word-level vectors and cannot represent whole sentences or polysemy (words with multiple meanings depending on context). Standard BERT produces contextual token embeddings that require pooling, which often yields poor sentence embeddings without contrastive fine-tuning. `multilingual-e5-base` was specifically pretrained using weak-supervision and contrastive loss on 1 billion multilingual text pairs to optimize sentence-level semantic representations across 100+ languages including Telugu.
-
-### Q2: Why do you prefix queries with `query: ` and documents with `passage: `?
-> **Answer**: E5 is an asymmetric retrieval model. A search query is short and phrased as a question/intent, whereas a passage is long and phrased as an explanation/article. Prefixing instructs the transformer's attention heads to project the query and passage into compatible vector spaces for asymmetric similarity comparison.
-
-### Q3: Why did you use `faiss.IndexFlatIP` instead of L2 distance?
-> **Answer**: All our generated embeddings are $L_2$-normalized to unit length ($\|v\|_2 = 1.0$). For unit vectors, the inner product (dot product) is mathematically identical to cosine similarity:
-> $$\text{Cosine Similarity}(u, v) = \frac{u \cdot v}{\|u\|_2 \|v\|_2} = u \cdot v$$
-> Inner product computation is faster and directly supported via SIMD/BLAS instructions in `IndexFlatIP`.
-
-### Q4: Is a cosine similarity score of 0.82 equivalent to an 82% probability of relevance?
-> **Answer**: **No.** Cosine similarity is a geometric angular distance metric in 768-dimensional latent space. It indicates directional alignment between embeddings. It is **not** a calibrated posterior probability of relevance. Even unrelated texts in multilingual models often have baseline cosine scores of ~0.60–0.70 due to vector anisotropy (the "cone effect" where embeddings occupy a narrow sub-cone of the space).
-
-### Q5: What is the "Vocabulary Mismatch Problem", and how does Telugu suffer from it?
-> **Answer**: The vocabulary mismatch problem occurs when the user's search words do not match the document words, despite having identical meaning. In Telugu, due to agglutination and case inflections (vibhakti), a root word like `ప్రమాదం` appears as `ప్రమాదంలో`, `ప్రమాదాలు`, `ప్రమాదానికి`. Lexical engines like BM25 view these as distinct tokens, causing false negatives. Semantic embeddings represent them in neighboring vector locations regardless of surface morphology.
-
-### Q6: How does your Hybrid Search combine BM25 and Semantic scores?
-> **Answer**: Dense cosine similarity scores typically lie in $[0, 1]$, while raw BM25 scores are unbounded $[0, \infty)$. We apply min-max normalization to the BM25 scores:
-> $$S_{\text{norm}} = \frac{S_{\text{bm25}} - \min(S)}{\max(S) - \min(S)}$$
-> Then we compute the hybrid score using linear interpolation:
-> $$S_{\text{hybrid}} = \alpha \cdot S_{\text{dense}} + (1 - \alpha) \cdot S_{\text{norm}}$$
-> We set $\alpha = 0.65$, giving 65% weight to semantic meaning and 35% to exact keyword matches.
-
----
 
 ## ⚠️ 9. Limitations & Future Scope
 
