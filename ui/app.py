@@ -112,7 +112,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-@st.cache_resource(show_spinner="నమూనాలు మరియు డేటాను లోడ్ చేస్తోంది (Loading models & index)...")
+@st.cache_resource(show_spinner="Loading models & index")
 def load_all_searchers():
     """Cached loader for Semantic, BM25, and Hybrid searchers."""
     index_path = os.path.join(PROJECT_ROOT, "artifacts", "faiss_index.bin")
@@ -144,22 +144,22 @@ def load_all_searchers():
 
 def main():
     # Sidebar
-    st.sidebar.title("⚙️ సెర్చ్ సెట్టింగులు")
+    st.sidebar.title("⚙️ Search Settings")
     st.sidebar.markdown("---")
 
     # Search Mode Selection
     search_mode = st.sidebar.radio(
-        "🔍 శోధన పద్ధతి (Search Mode):",
+        "🔍 Search Mode:",
         [
-            "🧠 సెమాంటిక్ శోధన (Semantic - FAISS + E5)",
-            "⚡ హైబ్రిడ్ శోధన (Hybrid - Dense + BM25)",
-            "🔤 కీవర్డ్ శోధన (Keyword - BM25)"
+            "🧠 Semantic - FAISS + E5",
+            "⚡ Hybrid - Dense + BM25",
+            "🔤 Keyword - BM25"
         ],
         index=0
     )
 
     top_k = st.sidebar.slider(
-        "ఫలితాల సంఖ్య (Number of Results):",
+        "Number of Results:",
         min_value=1,
         max_value=20,
         value=5,
@@ -182,17 +182,17 @@ def main():
             selected_sample = sq
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📊 సిస్టమ్ సమాచారం (System Specs)")
-    st.sidebar.caption("• మోడల్: `intfloat/multilingual-e5-base`")
-    st.sidebar.caption("• వెక్టర్ కొలత: `768 Dimensions`")
-    st.sidebar.caption("• ఇండెక్స్ మెట్రిక్: `FAISS IndexFlatIP (Cosine)`")
-    st.sidebar.caption("• లేక్సికల్ ఇంజిన్: `BM25 Okapi`")
-    st.sidebar.caption("• ఇండెక్స్ చేయబడిన వార్తలు: `1,000 Articles`")
+    st.sidebar.markdown("### 📊 System Specs")
+    st.sidebar.caption("• Model: `intfloat/multilingual-e5-base`")
+    st.sidebar.caption("• Vector Dimensions: `768 Dimensions`")
+    st.sidebar.caption("• Index Metric: `FAISS IndexFlatIP (Cosine)`")
+    st.sidebar.caption("• Lexical Engine: `BM25 Okapi`")
+    st.sidebar.caption("• Articles in Index: `1,000 Articles`")
 
     # Main UI Header
     st.markdown('<div class="main-title">TELUSEARCH 🔍</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="sub-title">Semantic Search for Telugu News Articles — ఆర్టిఫిషియల్ ఇంటెలిజెన్స్ ఆధారిత అర్థవంతమైన శోధన</div>',
+        '<div class="sub-title">Semantic Search for Telugu News Articles — Artificial Intelligence Based Meaningful Search</div>',
         unsafe_allow_html=True
     )
 
@@ -200,17 +200,17 @@ def main():
     semantic_searcher, bm25_searcher, hybrid_searcher = load_all_searchers()
     if semantic_searcher is None:
         st.error(
-            "⚠️ FAISS ఇండెక్స్ లేదా మెటాడేటా ఫైళ్లు కనిపించలేదు! "
-            "దయచేసి ముందుగా `python indexing/build_index.py` రన్ చేసి ఇండెక్స్ నిర్మించండి."
+            "FAISS Index or Metadata Files Not Found! "
+            "Please run `python indexing/build_index.py` first to build the index."
         )
         st.info("Artifacts path: `artifacts/faiss_index.bin`, `artifacts/metadata.parquet`")
         return
 
     # Select active searcher
-    if "సెమాంటిక్" in search_mode:
+    if "Semantic" in search_mode:
         active_searcher = semantic_searcher
         mode_label = "Semantic (FAISS + E5)"
-    elif "హైబ్రిడ్" in search_mode:
+    elif "Hybrid" in search_mode:
         active_searcher = hybrid_searcher
         mode_label = "Hybrid (Dense + BM25, Alpha=0.65)"
     else:
@@ -219,7 +219,7 @@ def main():
 
     # Search Bar
     query_input = st.text_input(
-        "మీ శోధన ప్రశ్నను తెలుగులో నమోదు చేయండి (Enter query in Telugu):",
+        "Enter query in Telugu:",
         value=selected_sample if selected_sample else "",
         placeholder="ఉదా: రోడ్డు ప్రమాదం, రైతు ఆందోళన, సినిమా విశేషాలు...",
         key="query_input"
@@ -227,34 +227,34 @@ def main():
 
     col1, col2 = st.columns([1, 5])
     with col1:
-        search_clicked = st.button("శోధించండి (Search)", type="primary", use_container_width=True)
+        search_clicked = st.button("Search", type="primary", use_container_width=True)
 
     # Execute Search
     active_query = query_input.strip()
     if search_clicked or selected_sample or (active_query and len(active_query) > 2):
         if not active_query:
-            st.warning("దయచేసి శోధించడానికి ఒక ప్రశ్నను నమోదు చేయండి (Please enter a query).")
+            st.warning("Please enter a query.")
             return
 
-        with st.spinner(f"[{mode_label}] వార్తలను శోధిస్తోంది..."):
+        with st.spinner(f"[{mode_label}] Searching for articles..."):
             results = active_searcher.search(active_query, top_k=top_k)
 
         if not results:
-            st.info("సరిపోలిన వార్తలు ఏవీ కనుగొనబడలేదు (No matching articles found).")
+            st.info("No matching articles found.")
             return
 
         retrieval_ms = results[0]["retrieval_time_ms"]
         st.markdown(
-            f'<div class="stat-pill">⚡ <b>{len(results)}</b> ఫలితాలు దొరికాయి | ఇంజిన్: <b>{mode_label}</b> | సమయం: <b>{retrieval_ms:.1f} ms</b></div>',
+            f'<div class="stat-pill"> <b>{len(results)}</b> Results Found | Engine: <b>{mode_label}</b> | Time: <b>{retrieval_ms:.1f} ms</b></div>',
             unsafe_allow_html=True
         )
 
         # Render Results
         for r in results:
             if r["score"] > 1.0:
-                score_label = f"BM25 స్కోరు: {r['score']:.2f}"
+                score_label = f"BM25 Score: {r['score']:.2f}"
             else:
-                score_label = f"సామ్యత స్కోరు: {r['score'] * 100:.1f}% ({r['score']:.4f})"
+                score_label = f"Similarity Score: {r['score'] * 100:.1f}% ({r['score']:.4f})"
 
             st.markdown(f"""
             <div class="result-card">
@@ -263,16 +263,16 @@ def main():
                         <span class="score-badge">{score_label}</span>
                         <span class="id-badge">ID: {r['doc_id']}</span>
                     </div>
-                    <span style="color: #6b7280; font-size: 0.85rem;">వరుస సంఖ్య: #{r['rank']}</span>
+                    <span style="color: #6b7280; font-size: 0.85rem;">Rank: #{r['rank']}</span>
                 </div>
                 <div class="headline-text">{r['headline']}</div>
                 <div class="snippet-text">{r['snippet']}</div>
             </div>
             """, unsafe_allow_html=True)
 
-            with st.expander(f"📄 పూర్తి వార్త చదవండి: {r['headline'][:40]}..."):
+            with st.expander(f"📄 Read Full Story: {r['headline'][:40]}..."):
                 st.write(r["full_article"])
-                st.caption(f"మూల కథనం ID (Original Story ID): `{r['orig_story_id']}`")
+                st.caption(f"Original Story ID: `{r['orig_story_id']}`")
 
 
 if __name__ == "__main__":
