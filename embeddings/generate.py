@@ -166,10 +166,14 @@ def generate_full_embeddings(
     metadata_file = os.path.join(output_dir, "metadata.parquet")
 
     if not force and os.path.exists(embeddings_file) and os.path.exists(metadata_file):
-        print(f"Existing embeddings found at '{embeddings_file}'.")
-        print("Use --force to regenerate. Skipping embedding generation.")
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         existing_emb = np.load(embeddings_file)
-        print(f"Loaded existing embeddings: shape {existing_emb.shape}")
+        print(f"Existing embeddings found at '{embeddings_file}'.")
+        print(f"  • Total documents : {existing_emb.shape[0]:,}")
+        print(f"  • Embedding shape : {existing_emb.shape}")
+        print(f"  • Device detected : [{device.upper()}]")
+        print("Use --force to regenerate.")
         return existing_emb
 
     df = pd.read_parquet(input_parquet)
